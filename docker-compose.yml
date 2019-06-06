@@ -1,0 +1,19 @@
+version: '3.3'
+
+services:
+  backend:
+    container_name: roomook.backend
+    build: roomook.backend/
+    ports:
+      - "3000:3000"
+#    volumes:
+#      - ./roomook.backend:/app
+
+  
+  frontend:
+    container_name: roomook.frontend
+    build: roomook.frontend/
+#    volumes: 
+#      - ./roomook.frontend:/app
+    ports:
+      - "8085:8080"
