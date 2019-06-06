@@ -1,0 +1,8 @@
+database:
+  db: mysql
+  db_name: roombook
+  db_user: roomook
+  db_password: FBmuhkAVG2SUA35zjN
+  db_host: romoook-db.cnvxy9d7rzbt.eu-central-1.rds.amazonaws.com:3306
+
+server_port: 3000
