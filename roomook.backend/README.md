@@ -1,4 +1,4 @@
-# RaumbuchungsApp
+# Roomook Backend
 
 ## Getting started
 

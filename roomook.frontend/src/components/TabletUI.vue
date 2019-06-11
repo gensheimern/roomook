@@ -2,7 +2,12 @@
   <div>
     <v-btn type="button" @click="toggle">Fullscreen</v-btn>
     <fullscreen ref="fullscreen" @change="fullscreenChange">
-      <v-flex class="container" v-bind:class="{ active: isActive, 'blur': hasBlur }" grid-list-xl fluid>
+      <v-flex
+        class="container"
+        v-bind:class="{ active: isActive, 'blur': hasBlur }"
+        grid-list-xl
+        fluid
+      >
         <v-layout v-if="isoccupied" row wrap>
           <v-layout xs6 fill-height>
             <v-flex class="text-xs-center" id="circ">
@@ -14,6 +19,7 @@
                 color="#FF1744"
               >
                 <v-flex xs12 class="text uhrfrei" align-self-center>{{time | moment("HH:mm")}}</v-flex>
+                <v-flex xs12 class="roomID">Aquarium</v-flex>
               </v-progress-circular>
             </v-flex>
           </v-layout>
@@ -28,7 +34,15 @@
                     class="text-xs-left currentBookingTime"
                   >now - {{currentBooking.end | moment("HH:mm")}}</v-flex>
                   <v-progress-linear :indeterminate="true" color="#FF1744" height="0.3rem"></v-progress-linear>
-                  <v-flex xs12 class="text-xs-right">{{currentBooking.userID}}</v-flex>
+                  <v-flex xs12 class="text-xs-right">
+                    <v-btn
+                      small
+                      right
+                      color="#FF1744"
+                      @click="dialogcheckout = true, blurTrue()"
+                    >CHECKOUT</v-btn>
+                    {{currentBooking.userID}}
+                  </v-flex>
                 </v-card>
               </v-flex>
 
@@ -62,7 +76,6 @@
           <v-flex class="text-xs-left" xs6>
             <v-layout aglin-start justify-start column wrap>
               <v-flex xs8 v-if="isNextBookings">
-                <!--
                 <v-btn
                   round
                   block
@@ -73,7 +86,6 @@
                   @click.stop="dialog = true"
                   @click="blurTrue()"
                 >book</v-btn>
-                -->
               </v-flex>
               <v-flex v-if="isNextBookings">
                 <h1>upcoming</h1>
@@ -98,7 +110,6 @@
             </v-flex>
 
             <v-flex xs8 v-if="!isNextBookings">
-              <!--
               <v-btn
                 round
                 block
@@ -109,10 +120,7 @@
                 @click.stop="dialog = true"
                 @click="blurTrue()"
               >book</v-btn>
-              -->
             </v-flex>
-
-            
           </v-flex>
         </v-layout>
 
@@ -148,35 +156,63 @@
           </v-flex>
         </v-bottom-nav>
       </v-flex>
-      <v-dialog v-model="dialog" persistent  lazy width="700px" height="680px">
-              <v-time-picker
-              class="noblur"
-                header-color="#00E676"
-                color="#00E676"
-                dark
-                full-width
-                :landscape="landscape"
-                format="24hr"
-                v-model="e7"
-                :allowed-minutes="allowedStep"
-                :max=tabletMax
-              >
-              
-                <v-spacer>Terminende festlegen</v-spacer>
-                <v-layout justify-end row wrap>
-                  <v-flex xs4>
-                    <v-btn
-                    color="#FF1744"
-                    
-                    @click="dialog = false, blurTrue(), bookingCancel()"
-                    >CANCEL</v-btn>
-                  </v-flex>
-                  <v-flex xs6>
-                    <v-btn color="#00E676"  @click="dialog = false, blurTrue(), tabletBooking()">BUCHEN</v-btn>
-                  </v-flex>
-                </v-layout>
-              </v-time-picker>
-            </v-dialog>
+
+      <v-dialog
+        v-model="dialogcheckout"
+        v-if="currentBooking != null"
+        persistent
+        lazy
+        width="600px"
+      >
+        <v-card dark>
+          <v-card-title></v-card-title>
+          <v-card-text>
+            <v-layout align-start justify-start row wrap>
+              <v-flex class="checkout" xs12>{{currentBooking.title}}</v-flex>
+              <v-flex class="checkout" xs12>als {{currentBooking.userID}} auschecken?</v-flex>
+              <v-flex xs10 offset-xs1>
+                <v-progress-linear color="grey" height="1" value="100"></v-progress-linear>
+              </v-flex>
+
+              <v-flex xs2 offset-xs6>
+                <v-btn color="#FF1744" @click="dialogcheckout = false,checkOut()">Checkout</v-btn>
+              </v-flex>
+              <v-flex xs4>
+                <v-btn color="grey" @click="dialogcheckout = false, bookingCancel()">Abbrechen</v-btn>
+              </v-flex>
+            </v-layout>
+          </v-card-text>
+        </v-card>
+      </v-dialog>
+      <!--///////////////////////////////////////////////////////////////////////////////////////-->
+      <v-dialog v-model="dialog" persistent lazy width="700px" height="680px">
+        <v-time-picker
+          class="noblur"
+          header-color="#00E676"
+          color="#00E676"
+          dark
+          full-width
+          :landscape="landscape"
+          format="24hr"
+          v-model="e7"
+          :allowed-minutes="allowedStep"
+        >
+          <v-spacer>Terminende festlegen</v-spacer>
+          <v-layout justify-end row wrap>
+            <v-flex xs4>
+              <v-btn color="#FF1744" @click="dialog = false, bookingCancel()">CANCEL</v-btn>
+            </v-flex>
+            <v-flex xs6>
+              <v-btn color="#00E676" @click="tabletBooking()">BUCHEN</v-btn>
+            </v-flex>
+          </v-layout>
+        </v-time-picker>
+        <v-alert
+          :value="pickerror"
+          type="error"
+          color="red"
+        >Bitte geben Sie die Zeit in HH:mm Format an.</v-alert>
+      </v-dialog>
     </fullscreen>
   </div>
 </template>
@@ -205,10 +241,12 @@ export default {
       landscape: true,
       picker: null,
       dialog: false,
-      e7: moment(),
+      e7: null,
       isActive: true,
       hasBlur: false,
-      tabletMax: "",
+      tabletBook: "",
+      pickerror: false,
+      dialogcheckout: false
     };
   },
 
@@ -220,7 +258,7 @@ export default {
     this.$options.sockets.onmessage = () => {
       axios
 
-        .get(this.$url + "/tablet/b/r/" + this.$route.params.id)
+        .get("http://localhost:3000/b/r/" + this.$route.params.id)
         .then(response => {
           this.bookings = response.data;
           this.getCurrentBookings();
@@ -242,28 +280,51 @@ export default {
   },
 
   methods: {
-    
-
     allowedStep: m => m % 5 === 0,
 
-    bookingCancel(){
+    checkOut() {
+      this.currentBooking.end[0] = this.time.format("YYYY-MM-DD HH:mm:ss");
+      console.log(this.currentBooking.end[0]);
+      this.hasBlur = false;
+      axios.post(this.$url + "/booking", {
+        title: this.currentBooking.title,
+        roomID: this.currentBooking.roomID,
+        begin: [this.currentBooking.begin[0]],
+        end: [this.time.format("YYYY-MM-DD HH:mm:ss")],
+        recurringType: this.currentBooking.recurringType
+      });
+    },
+
+    bookingCancel() {
       this.e7 = null;
-      console.log(this.e7);
+      this.hasBlur = false;
+      this.isActive = true;
     },
-    tabletBooking(){
-        var tiiimeeer = this.e7;
-        console.log(typeof tiiimeeer);
+    tabletBooking() {
+      var tabletHHmm = this.e7;
+      if (tabletHHmm === null) {
+        this.pickerror = true;
+        this.dialog = true;
+      } else {
+        var ymd = moment().format();
+        ymd = ymd.substring(0, 10);
+        this.tabletBook = ymd + " " + tabletHHmm + ":" + "00";
         this.e7 = null;
+        var test = moment().format();
+        this.pickerror = false;
+        this.dialog = false;
+        this.hasBlur = false;
+        console.log(this.tabletBook);
+        axios.post("http://localhost:3001/proxy/roomookBackend/q/", {
+          begin: this.tabletBook
+        });
+      }
     },
-    
+
     blurTrue() {
-      if(this.isActive === true && this.hasBlur === false){
       this.isActive = false;
       this.hasBlur = true;
-      }else{
-        this.isActive = true;
-      this.hasBlur = false;
-      }
+
       console.log("btn clicked");
     },
 
@@ -313,14 +374,7 @@ export default {
         this.currentBooking = null;
         this.sliceBooking = this.bookings;
         this.sliceBooking = this.sliceBooking.slice(0, 3);
-        var tMaxB = this.sliceBooking[0].begin[0];
-        
-        var tMaxBh = moment(tMaxB).get("hours")
-        var tMaxBm = moment(tMaxB).get("minutes")
-
-        console.log(tMaxBh, tMaxBm);
         this.refreshBookings();
-        
       }
     },
     ecxec() {
@@ -354,7 +408,7 @@ export default {
     },
     fetchBookings() {
       axios
-        .get(this.$url + "/tablet/b/r/" + this.$route.params.id)
+        .get("http://localhost:3000/b/r/" + this.$route.params.id)
         .then(response => {
           this.bookings = response.data;
 
@@ -386,11 +440,14 @@ export default {
 </script>
 
 <style scoped>
-.blur{
+.checkout {
+  font-size: 3rem;
+}
+.blur {
   filter: blur(7px);
 }
-.noblur{
-  filter:blur(0px);
+.noblur {
+  filter: blur(0px);
 }
 .btn {
   height: 4rem;
