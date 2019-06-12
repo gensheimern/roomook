@@ -194,7 +194,7 @@
           full-width
           :landscape="landscape"
           format="24hr"
-          v-model="e7"
+          v-model="bookingtime"
           :allowed-minutes="allowedStep"
         >
           <v-spacer>Terminende festlegen</v-spacer>
@@ -241,7 +241,7 @@ export default {
       landscape: true,
       picker: null,
       dialog: false,
-      e7: null,
+      bookingtime: null,
       isActive: true,
       hasBlur: false,
       tabletBook: "",
@@ -256,9 +256,10 @@ export default {
 
   created() {
     this.$options.sockets.onmessage = () => {
+      console.log("websockets");
       axios
 
-        .get("http://localhost:3000/b/r/" + this.$route.params.id)
+        .get(this.$url + "/tablet/b/r/" + this.$route.params.id)
         .then(response => {
           this.bookings = response.data;
           this.getCurrentBookings();
@@ -277,31 +278,45 @@ export default {
     }, 1000);
 
     this.fetchBookings();
+
+    var func = this.fetchBookings;
+
+    schedule.scheduleJob("0 7 * * *", function() {
+      func();
+    });
   },
 
   methods: {
     allowedStep: m => m % 5 === 0,
+  
 
     checkOut() {
-      this.currentBooking.end[0] = this.time.format("YYYY-MM-DD HH:mm:ss");
-      console.log(this.currentBooking.end[0]);
       this.hasBlur = false;
-      axios.post(this.$url + "/booking", {
-        title: this.currentBooking.title,
-        roomID: this.currentBooking.roomID,
-        begin: [this.currentBooking.begin[0]],
-        end: [this.time.format("YYYY-MM-DD HH:mm:ss")],
-        recurringType: this.currentBooking.recurringType
-      });
+      axios
+        .put("/tablet/booking/" + this.currentBooking.bookingID, {
+          title: this.currentBooking.title,
+          roomID: this.currentBooking.roomID,
+          begin: [this.currentBooking.begin[0]],
+          end: [this.time.format("YYYY-MM-DD HH:mm:ss")]
+        })
+        .then(response => {
+          this.$socket.sendObj({
+            Type: "createBooking",
+            RoomID: this.$route.params.id
+          });
+        })
+        .catch(err => {
+          console.log(err);
+        });
     },
 
     bookingCancel() {
-      this.e7 = null;
+      this.bookingtime = null;
       this.hasBlur = false;
       this.isActive = true;
     },
     tabletBooking() {
-      var tabletHHmm = this.e7;
+      var tabletHHmm = this.bookingtime;
       if (tabletHHmm === null) {
         this.pickerror = true;
         this.dialog = true;
@@ -309,14 +324,27 @@ export default {
         var ymd = moment().format();
         ymd = ymd.substring(0, 10);
         this.tabletBook = ymd + " " + tabletHHmm + ":" + "00";
-        this.e7 = null;
         var test = moment().format();
         this.pickerror = false;
         this.dialog = false;
         this.hasBlur = false;
         console.log(this.tabletBook);
-        axios.post("http://localhost:3001/proxy/roomookBackend/q/", {
-          begin: this.tabletBook
+        axios.post("/tablet/booking/", {
+          title: "tablet booking",
+          roomID: this.$route.params.id,
+          begin:  [this.time.format("YYYY-MM-DD HH:mm:ss")],
+          end: [this.tabletBook],
+          recurringType: "single"
+
+        }).then(response => {
+          this.$socket.sendObj({
+            Type: "createBooking",
+            RoomID: this.$route.params.id
+          }),
+          this.bookingtime = null
+        })
+        .catch(err => {
+          console.log(err);
         });
       }
     },
@@ -408,7 +436,7 @@ export default {
     },
     fetchBookings() {
       axios
-        .get("http://localhost:3000/b/r/" + this.$route.params.id)
+        .get(this.$url + "/tablet/b/r/" + this.$route.params.id)
         .then(response => {
           this.bookings = response.data;
 

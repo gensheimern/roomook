@@ -1,22 +1,17 @@
 <template>
-<v-card hover>
-      <v-img
+  <v-card hover>
+    <v-img
       src="https://aws-tiqets-cdn.imgix.net/images/content/ca3a0de0cab6496b9578a2b2c300151a.jpg?auto=format&fit=crop&ixlib=python-1.1.2&q=25&s=3731f5dca39321f37cbd51be11c9abfd&w=400&h=320&dpr=2.625"
       aspect-ratio="2.75"
     >
-
-
-    
-            <v-layout v-if="isOwner" fill-height align-end justify-end>
-  <v-btn small right fab color="orange" @click="updateBooking()">
+      <v-layout v-if="isOwner" fill-height align-end justify-end>
+        <v-btn small right fab color="orange" @click="updateBooking()">
           <v-icon>edit</v-icon>
         </v-btn>
         <v-btn small right fab color="red" @click="deleteBooking()">
           <v-icon>delete</v-icon>
         </v-btn>
-            </v-layout>
-          
-    
+      </v-layout>
     </v-img>
     <v-card-title class="detailHeadline elevation-5">
       <v-flex xs8>
@@ -70,7 +65,7 @@
       :booking="clickedEvent"
       :room="room"
     />
-</v-card>
+  </v-card>
 </template>
 
 <script>
@@ -82,7 +77,7 @@ export default {
     clickedEvent: { type: Object },
     activeRoomID: { type: String },
     room: { type: Object },
-    loggedInUser: {type: String}
+    loggedInUser: { type: String }
   },
   data() {
     return {
@@ -91,26 +86,24 @@ export default {
     };
   },
 
-  created(){
-     if(this.clickedEvent.owner === this.loggedInUser ){
-      this.isOwner = true
+  created() {
+    if (this.clickedEvent.owner === this.loggedInUser || this.clickedEvent.owner == "") {
+      this.isOwner = true;
     } else {
-      this.isOwner = false
+      this.isOwner = false;
     }
   },
-  updated(){
-    if(this.clickedEvent.owner === this.loggedInUser ){
-      this.isOwner = true
+  updated() {
+    if (this.clickedEvent.owner === this.loggedInUser || this.clickedEvent.owner == "") {
+      this.isOwner = true;
     } else {
-      this.isOwner = false
+      this.isOwner = false;
     }
   },
 
   methods: {
-
     updateBooking() {
       this.$refs.updateBookingDialog.toggleDialog();
-
     },
     deleteBooking() {
       this.$refs.deleteBookingDialog.toggleDialog();

@@ -16,9 +16,12 @@ RUN  go mod tidy \
      && go mod vendor
 
 
+
 RUN go build -ldflags="-w -s" -o /go/src/go.roomook.backend/api
 
 FROM alpine:latest
+
+RUN apk add --no-cache tzdata
 
 WORKDIR /app
 

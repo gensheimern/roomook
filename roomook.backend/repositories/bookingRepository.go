@@ -163,12 +163,19 @@ func (repositorys *BookingRepository) CreateBooking(booking models.BookingModel)
 	// FIXME hier ist das Problem, dass Query(), *Rows zurückliefert worunter man die lastinserid() nicht aufrufen kann
 	// abhilfe wäre hier Exec() zu verwenden, dort wird ein *Stmt zurückgeliefert.
 
-fmt.Println("==============================")
-fmt.Println(booking.Begin[0])
+location, err := time.LoadLocation("Europe/Berlin")
 
-beginTime ,_:= time.Parse("2006-01-02 15:04:00",booking.Begin[0])
-fmt.Println(beginTime, time.Now())
-if (!beginTime.Before(time.Now())){
+if err != nil {
+	fmt.Println(err)
+}
+
+beginTime , errParse:= time.ParseInLocation("2006-01-02 15:04:05",booking.Begin[0], location)
+
+if errParse != nil {
+	fmt.Println(err)
+}
+
+if (!beginTime.Add(time.Minute * 2).Before(time.Now())){
 
 	var bookings []models.BookingModel
 	tmpBooking := booking
@@ -212,7 +219,13 @@ if (!beginTime.Before(time.Now())){
 func (repositorys *BookingRepository) UpdateBooking(bookingID string, bookingToUpdate models.BookingModel) (models.BookingModel, error) {
 	// TODO ALLE REPOS mit der update funktion anpassen -> SQL QUERY
 
-	beginTime ,_:= time.Parse("2006-01-02 15:04:00",bookingToUpdate.Begin[0])
+	location, err := time.LoadLocation("Europe/Berlin")
+
+if err != nil {
+	fmt.Println(err)
+}
+
+	beginTime ,_:= time.ParseInLocation("2006-01-02 15:04:00",bookingToUpdate.Begin[0], location)
 	if (!beginTime.Before(time.Now())){
 
 	rows, err := repositorys.DBHandler.PreparedQuery("UPDATE booking set Title= ?, RoomID= ?, Begin= ?, End= ? where BookingID= ?;",
@@ -234,7 +247,7 @@ func (repositorys *BookingRepository) UpdateBooking(bookingID string, bookingToU
 
 	return booking, err
 }
-	err := errors.New("Can not update booking to the past")
+	err = errors.New("Can not update booking to the past")
 	return bookingToUpdate, err
 }
 
